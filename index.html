@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulator Monitoring Dashboard</title>
+<link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+
+  <header class="run-status">
+    <div class="run-status-label">RUN STATUS</div>
+    <div class="run-status-center">
+      <span id="status-dot" class="status-dot status-dot--reconnecting"></span>
+      <span id="status-text" class="status-text">CONNECTING</span>
+      <span class="status-sep">&middot;</span>
+      <span id="status-age" class="status-age">no data yet</span>
+    </div>
+    <div id="clock" class="clock">--:--:--</div>
+  </header>
+
+  <main class="dashboard-layout">
+    <div class="dashboard-main">
+      <section id="tile-grid" class="tile-grid" aria-label="Live parameters"></section>
+
+      <section class="flags-section" aria-label="Status flags">
+        <div class="section-heading">FLAGS</div>
+        <div id="flags-row" class="flags-row"></div>
+      </section>
+
+      <section class="history-section" aria-label="Parameter history">
+        <div class="history-heading">
+          <span class="section-heading">HISTORY</span>
+          <div id="history-legend" class="history-legend"></div>
+        </div>
+        <div class="history-chart-wrap">
+          <canvas id="history-canvas"></canvas>
+        </div>
+      </section>
+    </div>
+
+    <aside id="screenshot-panel" class="screenshot-panel" aria-label="Latest simulator screenshot">
+      <div class="history-heading">
+        <span class="section-heading">LATEST SCREENSHOT</span>
+        <span id="screenshot-status" class="status-text status-text--reconnecting">—</span>
+      </div>
+      <div class="screenshot-frame">
+        <img id="screenshot-img" alt="Latest simulator screenshot" style="display:none;">
+        <div id="screenshot-placeholder" class="screenshot-placeholder">No screenshot yet</div>
+      </div>
+      <div class="screenshot-meta">
+        <span id="screenshot-filename" class="screenshot-filename"></span>
+        <span id="screenshot-timestamp" class="screenshot-timestamp">—</span>
+      </div>
+    </aside>
+  </main>
+
+  <!--
+    Chart.js from CDN, with an automatic fallback to the local vendored
+    copy (vendor/chart.min.js) if the CDN can't be reached — this dashboard
+    is meant to keep working on an internal network with no internet
+    access. This is the classic synchronous document.write fallback
+    pattern; it only runs once, at load time, before any other script tag.
+  -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
+  <script>window.Chart || document.write('<script src="vendor/chart.min.js"><\/script>');</script>
+
+  <script src="js/config.js"></script>
+  <script src="js/datasource.js"></script>
+  <script src="js/screenshots.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/tiles.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

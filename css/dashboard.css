@@ -1,0 +1,503 @@
+/**
+ * dashboard.css
+ * ---------------------------------------------------------------------------
+ * Design reference: laboratory test equipment / telemetry consoles. Dense,
+ * calm, high-contrast, no ornament. Nominal state is deliberately quiet —
+ * only deviation should attract the eye.
+ *
+ * Font note: the readout font is a system monospace stack by default
+ * (ui-monospace / Menlo / Consolas) so this keeps working with zero
+ * network dependency on an internal/offline network, per the brief. If
+ * you have internet access and want JetBrains Mono specifically, add a
+ * self-hosted @font-face here (see README.md) — do not link to a font
+ * CDN, it'll silently fail offline and readouts will fall back anyway.
+ * ---------------------------------------------------------------------------
+ */
+
+:root {
+  --bg:          #12151A;
+  --surface:     #1B2028;
+  --surface-alt: #232935;
+  --line:        #2E3644;
+  --text:        #E4E8EF;
+  --text-dim:    #8B95A7;
+  --normal:      #5FB3A1;
+  --warn:        #E0A33E;
+  --crit:        #E5564E;
+
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", "Menlo", "Consolas", monospace;
+  --font-ui: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  /* Card elevation — a restrained shadcn-style lift, not a glow. Kept
+     subtle deliberately: the brief explicitly rejects the neon/glow
+     "technical dashboard" cliché, and a heavy shadow on every tile would
+     compete with the sparklines for attention. */
+  --radius: 10px;
+  --radius-sm: 6px;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.24), 0 4px 12px rgba(0, 0, 0, 0.18);
+  --shadow-card-inset: 0 1px 0 rgba(255, 255, 255, 0.03) inset;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  height: 100%;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ---------------------------------------------------------------------
+   Run status header
+--------------------------------------------------------------------- */
+
+.run-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--surface-alt);
+  border-bottom: 1px solid var(--line);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 1;
+}
+
+.run-status-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--text-dim);
+}
+
+.run-status-center {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  background: var(--text-dim);
+}
+.status-dot--live { background: var(--normal); }
+.status-dot--reconnecting { background: var(--warn); }
+.status-dot--disconnected { background: var(--crit); }
+
+.status-text { font-weight: 600; letter-spacing: 0.04em; }
+.status-text--live { color: var(--normal); }
+.status-text--reconnecting { color: var(--warn); }
+.status-text--disconnected { color: var(--crit); }
+
+.status-sep { color: var(--text-dim); }
+
+.status-age {
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+.status-age--stale { color: var(--warn); font-weight: 600; }
+
+.clock {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 1rem;
+  color: var(--text-dim);
+  min-width: 8ch;
+  text-align: right;
+}
+
+/* ---------------------------------------------------------------------
+   Layout
+--------------------------------------------------------------------- */
+
+main {
+  flex: 1;
+  padding: 1.25rem 1.5rem 2rem;
+  max-width: 1920px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* Two-column layout: parameters/history on the left, the latest
+   simulator screenshot on the right — both visible at once, per the
+   brief, rather than a tab the viewer has to switch to. */
+.dashboard-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 480px);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.dashboard-main {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  min-width: 0;
+}
+
+@media (max-width: 1100px) {
+  .dashboard-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.section-heading {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+
+/* ---------------------------------------------------------------------
+   Tile grid
+--------------------------------------------------------------------- */
+
+.tile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.tile {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 0.9rem 1rem 0.75rem;
+  position: relative;
+  box-shadow: var(--shadow-card), var(--shadow-card-inset);
+  transition: border-color 150ms ease, border-width 150ms ease;
+}
+
+.tile[data-state="normal"]   { border-color: var(--line); border-width: 1px; }
+.tile[data-state="unknown"]  { border-color: var(--line); border-width: 1px; border-style: dashed; }
+.tile[data-state="warning"]  { border-color: var(--warn); border-width: 2px; }
+.tile[data-state="critical"] { border-color: var(--crit); border-width: 3px; }
+
+.tile-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 0.35rem;
+}
+
+.tile-readout {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+}
+
+.tile-value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(2rem, 2.6vw, 2.75rem);
+  font-weight: 600;
+  color: var(--text);
+  display: inline-block;
+  min-width: 4.2ch;
+  text-align: right;
+  line-height: 1;
+}
+
+.tile-unit {
+  font-family: var(--font-mono);
+  font-size: 0.6em;
+  color: var(--text-dim);
+}
+
+.tile-state {
+  margin-top: 0.3rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+}
+.tile[data-state="warning"] .tile-state  { color: var(--warn); }
+.tile[data-state="critical"] .tile-state { color: var(--crit); }
+.tile[data-state="normal"] .tile-state   { color: var(--normal); }
+
+.tile-sparkline {
+  display: block;
+  width: 100%;
+  height: 44px;
+  margin-top: 0.5rem;
+}
+
+@keyframes pulseCritical {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(229, 86, 78, 0); }
+  50%      { box-shadow: 0 0 0 6px rgba(229, 86, 78, 0.35); }
+}
+.tile.pulse-critical {
+  animation: pulseCritical 300ms ease-in-out 2;
+}
+
+/* ---------------------------------------------------------------------
+   Flags
+--------------------------------------------------------------------- */
+
+.flags-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.flags-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  box-shadow: var(--shadow-card), var(--shadow-card-inset);
+}
+
+.flag {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
+
+.flag-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  border: 1.5px solid var(--text-dim);
+  background: transparent;
+}
+.flag-dot--normal   { background: var(--normal); border-color: var(--normal); }
+.flag-dot--abnormal { background: var(--crit); border-color: var(--crit); }
+.flag-dot--unknown  { background: transparent; border-style: dashed; }
+
+.flag-label {
+  color: var(--text-dim);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+}
+
+.flag-state { font-weight: 700; }
+.flag-state--normal   { color: var(--normal); }
+.flag-state--abnormal { color: var(--crit); }
+.flag-state--unknown  { color: var(--text-dim); }
+
+/* ---------------------------------------------------------------------
+   History chart
+--------------------------------------------------------------------- */
+
+.history-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+  min-height: 260px;
+}
+
+.history-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.history-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+}
+
+.chart-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  cursor: pointer;
+  user-select: none;
+  padding: 0.2rem 0.4rem;
+  margin: -0.2rem -0.4rem;
+  border-radius: var(--radius-sm);
+  transition: background-color 120ms ease, color 120ms ease;
+}
+.chart-toggle:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+}
+.chart-toggle input { accent-color: var(--series-color, var(--text-dim)); }
+.chart-toggle .swatch {
+  width: 16px;
+  height: 8px;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.chart-toggle:has(input:not(:checked)) {
+  color: var(--text-dim);
+  opacity: 0.55;
+}
+
+.history-chart-wrap {
+  background: var(--surface-alt);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1rem;
+  flex: 1;
+  min-height: 220px;
+  position: relative;
+  box-shadow: var(--shadow-card), var(--shadow-card-inset);
+}
+
+#history-canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Custom HTML tooltip — see charts.js. Positioned absolutely within
+   .history-chart-wrap (which is itself position:relative). */
+.chart-tooltip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 100ms ease;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-card);
+  padding: 0.55rem 0.7rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  white-space: nowrap;
+  z-index: 5;
+}
+
+.chart-tooltip-title {
+  color: var(--text-dim);
+  font-size: 0.68rem;
+  margin-bottom: 0.35rem;
+  letter-spacing: 0.02em;
+}
+
+.chart-tooltip-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.12rem 0;
+}
+
+.chart-tooltip-key {
+  width: 16px;
+  height: 8px;
+  flex-shrink: 0;
+}
+
+.chart-tooltip-value {
+  color: var(--text);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-tooltip-label {
+  color: var(--text-dim);
+  margin-left: auto;
+  padding-left: 0.75rem;
+}
+
+/* ---------------------------------------------------------------------
+   Screenshot panel
+--------------------------------------------------------------------- */
+
+.screenshot-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 0.9rem 1rem;
+  position: sticky;
+  top: 1.25rem;
+  box-shadow: var(--shadow-card), var(--shadow-card-inset);
+}
+
+.screenshot-frame {
+  position: relative;
+  background: var(--surface-alt);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  aspect-ratio: 16 / 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.screenshot-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: opacity 150ms ease;
+}
+
+.screenshot-placeholder {
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  text-align: center;
+  padding: 1rem;
+}
+
+.screenshot-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+.screenshot-filename {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.screenshot-timestamp {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.screenshot-timestamp.stale {
+  color: var(--warn);
+  font-weight: 600;
+}
+
+/* ---------------------------------------------------------------------
+   Motion
+--------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

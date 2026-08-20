@@ -1,0 +1,21 @@
+# OS junk
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor junk
+.vscode/
+.idea/
+*.swp
+
+# Local logs, if any dev server writes them
+*.log
+
+# Real/test screenshots dropped into the sample watch folder during local
+# testing — this folder should ship with just the placeholder README so
+# the repo stays small and doesn't leak anyone's actual screen captures.
+screenshots/*
+!screenshots/README.txt
+
+# A leftover from manual file transfers, harmless if it ever reappears
+_to_delete/
