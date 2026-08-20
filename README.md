@@ -332,8 +332,3 @@ historical persistence to disk/database, CSV export, email/SMS alerting,
 user accounts, multi-rig support, a mobile layout, and reading actual
 *values* out of screenshots (OCR or similar) — the screenshot panel shows
 the image itself, it doesn't parse numbers out of it.
-
-## License
-
-MIT — see [LICENSE](LICENSE). Free to use, modify, and reuse; swap the
-copyright name in that file if you're publishing this under your own name.
